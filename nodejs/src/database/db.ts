@@ -1,9 +1,12 @@
 import { dbConfig } from "@/configs/db";
+import fs from "fs";
 import { Pool } from "pg";
 
-export class PostgressPool {
+const schema = fs.readFileSync("src/database/schema.sql", "utf8");
+
+export class PostgresPool {
   private _pool: Pool;
-  private static instance: PostgressPool;
+  private static instance: PostgresPool;
 
   private constructor() {
     this._pool = new Pool({
@@ -13,6 +16,15 @@ export class PostgressPool {
     this._pool.on("connect", this.onConnect);
     this._pool.on("error", this.onError);
     this._pool.on("remove", this.onClose);
+  }
+
+  public async init() {
+    try {
+      await this._pool.query(schema);
+      console.log("Schema has been created");
+    } catch (err) {
+      console.error("Error while creating schema", err);
+    }
   }
 
   private onConnect() {
@@ -27,9 +39,9 @@ export class PostgressPool {
     console.log("Database connection has been closed.");
   }
 
-  public static geInstance(): PostgressPool {
+  public static geInstance(): PostgresPool {
     if (!this.instance) {
-      this.instance = new PostgressPool();
+      this.instance = new PostgresPool();
     }
     return this.instance;
   }

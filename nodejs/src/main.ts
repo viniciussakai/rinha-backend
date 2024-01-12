@@ -1,8 +1,12 @@
 import "dotenv/config";
 import fastify from "fastify";
+import { PostgresPool } from "./database/db";
 
 const server = fastify();
 const PORT = 3000 || process.env.PORT;
+const database = PostgresPool.geInstance();
+
+database.init();
 
 server.get("/", async (request, reply) => {
   return { hello: "world" };
