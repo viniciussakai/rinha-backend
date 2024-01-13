@@ -1,6 +1,6 @@
-import { dbConfig } from "@/configs/db";
 import fs from "fs";
 import { Pool } from "pg";
+import { dbConfig } from "../configs/db";
 
 const schema = fs.readFileSync("src/database/schema.sql", "utf8");
 
