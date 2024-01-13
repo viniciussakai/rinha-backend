@@ -1,19 +1,27 @@
-version: '3.5'
+version: "3.5"
 services:
-  api1: # API - Instância 01
-    build: .
+  api1: &api1 # API - Instância 01
+    image: node/rinha:latest
     hostname: api1
     depends_on:
       - db
+
     expose:
-      - "80"
+      - 80
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: '0.5GB'
+          cpus: "0.25"
+          memory: "0.5GB"
+    environment:
+      DB_HOST: db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+      POSTGRESQL_TRGM: true
+      APP_PORT: 80
 
-  api2: 
+  api2:
     <<: *api1
     hostname: api2
 
@@ -29,13 +37,22 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: '0.5GB'
+          cpus: "0.25"
+          memory: "0.5GB"
 
   db: # Banco de dados
-   image: postgres
-   deploy:
+    image: postgres
+    deploy:
       resources:
         limits:
-          cpus: '0.75'
-          memory: '1.5GB'
+          cpus: "0.75"
+          memory: "1.5GB"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+
+networks:
+  default:
+    driver: bridge
+    name: rinha
