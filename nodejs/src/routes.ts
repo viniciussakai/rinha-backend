@@ -2,7 +2,21 @@ import { FastifyPluginCallback } from "fastify";
 import { peopleController } from "./controllers/peopleController";
 
 export const routes: FastifyPluginCallback = (app, opts, next) => {
-  app.get("/pessoas/:id", peopleController.findOne);
+  app.route({
+    url: "/pessoas/:id",
+    method: "GET",
+    schema: {
+      params: {
+        $id: "id",
+        type: "object",
+        properties: {
+          id: { type: "string" },
+        },
+        required: ["id"],
+      },
+    },
+    handler: peopleController.findOne,
+  });
 
   app.route({
     url: "/pessoas",
@@ -36,10 +50,10 @@ export const routes: FastifyPluginCallback = (app, opts, next) => {
             items: { type: "string" },
           },
         },
-        required: ["nome", "apellido", "nascimento", "stack"],
+        required: ["nome", "apelido", "nascimento", "stack"],
       },
     },
-    handler: peopleController.searchTerm,
+    handler: peopleController.create,
   });
 
   app.get("/contagem-pessoas", peopleController.count);
