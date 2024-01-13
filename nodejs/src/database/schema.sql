@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE OR REPLACE FUNCTION generate_searchable(_nome VARCHAR, _apelido VARCHAR, _stack JSON)
 RETURNS TEXT AS $$
 BEGIN
-    RETURN _nome ||  _apelido || _stack;
+    RETURN _nome || ' ' || _apelido || ' ' || _stack::TEXT;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
