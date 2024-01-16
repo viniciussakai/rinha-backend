@@ -9,7 +9,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 
 CREATE TABLE IF NOT EXISTS pessoas(
-  id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+  id uuid NOT NULL PRIMARY KEY,
   nome VARCHAR NOT NULL,
   apelido VARCHAR NOT NULL UNIQUE,
   nascimento DATE NOT NULL,
