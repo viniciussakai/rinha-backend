@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
-  "_moduleAliases": {
-    "@": "dist"
-  },
   "scripts": {
     "build": "tsc ",
     "start": "node dist/main.js",
@@ -16,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^20.11.0",
     "@types/pg": "^8.10.9",
     "dotenv": "^16.3.1",
@@ -23,8 +21,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "fastify": "^4.25.2",
-    "module-alias": "^2.2.3",
+    "express": "^4.18.2",
     "pg": "^8.11.3"
   }
 }
