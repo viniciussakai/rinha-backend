@@ -1,104 +1,94 @@
-import { FastifyReply, FastifyRequest } from "fastify";
-import { PostgresPool } from "../database/db";
+import crypto from "crypto";
+import { Request, Response } from "express";
+import { PeopleRepository } from "../database/db";
 
 class PeopleController {
-  public create = async (req: FastifyRequest, reply: FastifyReply) => {
-    const { nome, apelido, nascimento, stack = [] } = req.body as any;
+  public create = async (req: Request, res: Response) => {
+    const { nome, nascimento, apelido, stack } = req.body;
 
-    if (!nome || !apelido || !nascimento) {
-      return reply.status(422).send({ error: "Missing fields" });
+    if (!nome || !nascimento || !apelido || !stack) {
+      return res.status(422).end();
     }
 
-    const date = new Date(nascimento);
-
-    if (date.toString() === "Invalid Date") {
-      return reply.status(422).send({ error: "Invalid date" });
+    if (typeof nome !== "string" || typeof apelido !== "string") {
+      return res.status(400).end();
     }
 
-    const pool = PostgresPool.geInstance();
+    if (new Date(nascimento).toString() === "Invalid Date") {
+      return res.status(400).end();
+    }
+
+    const id = crypto.randomUUID();
 
     try {
-      const { rows } = await pool.query(
-        "SELECT * FROM pessoas WHERE apelido = $1",
-        [apelido]
-      );
-
-      if (rows.length > 0) {
-        return reply.status(422).send({ error: "User already exists" });
+      if (await PeopleRepository.nicknameExists(apelido)) {
+        return res.status(422).end();
       }
-    } catch (err) {
-      return reply.status(500).send({ error: "Internal Server Error" });
-    }
 
-    try {
-      await pool.query(
-        "INSERT INTO pessoas (nome, apelido, nascimento, stack) VALUES ($1, $2, $3, $4)",
-        [nome, apelido, date, JSON.stringify(stack)]
-      );
-    } catch (err) {
-      return reply.status(500).send({ error: "Internal Server Error" });
-    }
+      await PeopleRepository.create({
+        id,
+        nome,
+        nascimento,
+        apelido,
+        stack: JSON.stringify(stack),
+      });
 
-    return reply.status(201).send({ mensage: "User created" });
+      return res.status(201).header("Location", `/pessoas/${id}`).end();
+    } catch (err) {
+      return res.status(500).end();
+    }
   };
 
-  public findOne = async (req: FastifyRequest, reply: FastifyReply) => {
-    const { id } = req.params as any;
-    const pool = PostgresPool.geInstance();
+  public findOne = async (req: Request, res: Response) => {
+    const { id } = req.params;
 
     if (!id) {
-      return reply.status(400).send({ error: "Missing id" });
+      return res.status(400).end();
     }
 
     try {
-      const { rows } = await pool.query("SELECT * FROM pessoas WHERE id = $1", [
-        id,
-      ]);
+      const result = await PeopleRepository.findOne(id);
 
-      if (rows.length === 0) {
-        return reply.status(404).send({ error: "User not found" });
+      if (!result) {
+        return res.status(404).end();
       }
 
-      return reply.status(200).send({
-        id: rows[0].id,
-        nome: rows[0].nome,
-        apelido: rows[0].apelido,
-        nascimento: rows[0].nascimento,
+      return res.status(200).json({
+        id: result.id,
+        nome: result.nome,
+        nascimento: result.nascimento,
+        apelido: result.apelido,
+        stack: result.stack,
       });
-    } catch {
-      return reply.status(500).send({ error: "Internal Server Error" });
-    }
-  };
-
-  public searchTerm = async (req: FastifyRequest, reply: FastifyReply) => {
-    const { t } = req.query as any;
-
-    if (!t) {
-      return reply.status(422).send({ error: "Missing search term" });
-    }
-
-    const pool = PostgresPool.geInstance();
-    try {
-      const { rows } = await pool.query(
-        "SELECT * FROM pessoas WHERE searchable ilike $1",
-        [`%${t}%`]
-      );
-
-      return reply.status(200).send(rows);
     } catch (err) {
       console.log(err);
-      return reply.status(500).send({ error: "Internal Server Error" });
+      return res.status(500).end();
     }
   };
 
-  public count = async (req: FastifyRequest, reply: FastifyReply) => {
-    const pool = PostgresPool.geInstance();
+  public searchTerm = async (req: Request, res: Response) => {
+    const { t: term } = req.query;
+
+    if (!term) {
+      return res.status(400).end();
+    }
 
     try {
-      const count = await pool.query("SELECT COUNT(*) FROM pessoas");
-      return reply.status(200).send({ count: count.rows[0].count });
+      const result = await PeopleRepository.searchTerm(term as string);
+
+      return res.status(200).json(result);
     } catch {
-      return reply.status(500).send({ error: "Internal Server Error" });
+      return res.status(500).end();
+    }
+  };
+
+  public count = async (req: Request, res: Response) => {
+    try {
+      const result = await PeopleRepository.count();
+
+      return res.status(200).json({ count: result });
+    } catch (err) {
+      return res.status(500).end();
     }
   };
 }
