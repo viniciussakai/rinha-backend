@@ -1,52 +1,60 @@
-import fs from "fs";
 import { Pool } from "pg";
 import { dbConfig } from "../configs/db";
 
-const schema = fs.readFileSync("src/database/schema.sql", "utf8");
+const pool = new Pool(dbConfig);
 
-export class PostgresPool {
-  private _pool: Pool;
-  private static instance: PostgresPool;
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle client", err);
+  process.exit(-1);
+});
 
-  private constructor() {
-    this._pool = new Pool({
-      ...dbConfig,
-    });
+class People {
+  public async create(data: any) {
+    const query =
+      "INSERT INTO pessoas (id, nome, nascimento, apelido, stack) VALUES ($1, $2, $3, $4, $5)";
+    const values = [
+      data.id,
+      data.nome,
+      data.nascimento,
+      data.apelido,
+      data.stack,
+    ];
 
-    this._pool.on("connect", this.onConnect);
-    this._pool.on("error", this.onError);
-    this._pool.on("remove", this.onClose);
+    await pool.query(query, values);
   }
 
-  public async init() {
-    try {
-      await this._pool.query(schema);
-      console.log("Schema has been created");
-    } catch (err) {
-      console.error("Error while creating schema", err);
+  public async findOne(id: string) {
+    const query = "SELECT * FROM pessoas WHERE id = $1";
+    const values = [id];
+    const result = await pool.query(query, values);
+
+    return result.rows[0];
+  }
+
+  public async searchTerm(term: string) {
+    const query = "SELECT * FROM pessoas WHERE searchable ILIKE $1 LIMIT 50";
+    const values = [`%${term}%`];
+    const result = await pool.query(query, values);
+
+    return result.rows;
+  }
+
+  public async count() {
+    const query = "SELECT COUNT(*) FROM pessoas";
+    const result = await pool.query(query);
+
+    return result.rows[0].count;
+  }
+
+  public async nicknameExists(apelido: string) {
+    const query = "SELECT * FROM pessoas WHERE apelido = $1";
+    const values = [apelido];
+    const result = await pool.query(query, values);
+
+    if (result.rows.length > 0) {
+      return true;
     }
-  }
-
-  private onConnect() {
-    console.log("A new connection has been made.");
-  }
-
-  private onError(err: Error) {
-    console.error("An error occurred while connecting to the DB", err);
-  }
-
-  private onClose() {
-    console.log("Database connection has been closed.");
-  }
-
-  public static geInstance(): PostgresPool {
-    if (!this.instance) {
-      this.instance = new PostgresPool();
-    }
-    return this.instance;
-  }
-
-  public query(query: string, params?: any[]) {
-    return this._pool.query(query, params);
   }
 }
+
+export const PeopleRepository = new People();
