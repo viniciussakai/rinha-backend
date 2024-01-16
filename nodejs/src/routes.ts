@@ -1,62 +1,11 @@
-import { FastifyPluginCallback } from "fastify";
+import { Router } from "express";
 import { peopleController } from "./controllers/peopleController";
 
-export const routes: FastifyPluginCallback = (app, opts, next) => {
-  app.route({
-    url: "/pessoas/:id",
-    method: "GET",
-    schema: {
-      params: {
-        $id: "id",
-        type: "object",
-        properties: {
-          id: { type: "string" },
-        },
-        required: ["id"],
-      },
-    },
-    handler: peopleController.findOne,
-  });
+const router = Router();
 
-  app.route({
-    url: "/pessoas",
-    method: "GET",
-    schema: {
-      querystring: {
-        $id: "searchTerm",
-        type: "object",
-        properties: {
-          t: { type: "string" },
-        },
-        required: ["t"],
-      },
-    },
-    handler: peopleController.searchTerm,
-  });
+router.get("/pessoas/:id", peopleController.findOne);
+router.get("/pessoas", peopleController.searchTerm);
+router.post("/pessoas", peopleController.create);
+router.get("/contagem-pessoas", peopleController.count);
 
-  app.route({
-    url: "/pessoas",
-    method: "POST",
-    schema: {
-      body: {
-        $id: "createPerson",
-        type: "object",
-        properties: {
-          nome: { type: "string" },
-          apelido: { type: "string" },
-          nascimento: { type: "string" },
-          stack: {
-            type: "array",
-            items: { type: "string" },
-          },
-        },
-        required: ["nome", "apelido", "nascimento", "stack"],
-      },
-    },
-    handler: peopleController.create,
-  });
-
-  app.get("/contagem-pessoas", peopleController.count);
-
-  next();
-};
+export { router as routes };

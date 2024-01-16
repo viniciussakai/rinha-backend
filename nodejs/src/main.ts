@@ -1,22 +1,18 @@
 import "dotenv/config";
-import fastify from "fastify";
-import { PostgresPool } from "./database/db";
+import express from "express";
 import { routes } from "./routes";
 
-const server = fastify();
+const app = express();
 const PORT = Number(process.env.APP_PORT) || 3000;
-const database = PostgresPool.geInstance();
 
-database.init();
+const TIMEOUT = Number(process.env.REQ_TIMEOUT) || 30000;
+const TIMEOUT_ENABLER = process.env.REQ_TIMEOUT_ENABLER || false;
 
-server.register(routes, {});
+app.use(express.json());
+app.use(routes);
 
-server.listen({ port: PORT, host: "0.0.0.0" }, (err, address) => {
-  if (err) {
-    console.log(err);
-    process.exit(1);
+app.listen(PORT, "0.0.0.0", () => {
+  if (TIMEOUT_ENABLER) {
+    app.set("timeout", TIMEOUT);
   }
-
-  console.log(`[server] listening on ${address}`);
-  console.log(server.printRoutes());
 });
