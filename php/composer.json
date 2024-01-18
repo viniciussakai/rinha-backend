@@ -11,10 +11,5 @@
     "flightphp/core": "^3.1",
     "vlucas/phpdotenv": "^5.6",
     "ramsey/uuid": "^4.7"
-  },
-  "autoload": {
-    "psr-4": {
-      "Treinaweb\\": "src/"
-    }
   }
 }
