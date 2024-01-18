@@ -1,0 +1,58 @@
+version: "3.5"
+services:
+  api1: &api # API - Instância 01
+    image: rinha/php
+    hostname: api1
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: pgsql:host=localhost;port=5432;dbname=postgres
+      DATABASE_USER: postgres
+      DATABASE_PASS: postgres
+      PORT: 8001
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "0.6GB"
+    network_mode: host
+
+  api2:
+    <<: *api # API - Instância 02
+    hostname: api2
+    environment:
+      DATABASE_URL: pgsql:host=localhost;port=5432;dbname=postgres
+      DATABASE_USER: postgres
+      DATABASE_PASS: postgres
+      PORT: 8002
+    network_mode: host
+
+  nginx: # Load Balancer
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+    network_mode: host
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: "0.3GB"
+
+  db: # Banco de dados
+    command: postgres -c 'max_connections=250'
+    image: postgres
+    deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: "1.5GB"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    network_mode: host
