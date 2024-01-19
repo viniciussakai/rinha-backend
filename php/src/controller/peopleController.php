@@ -24,7 +24,7 @@ class PeopleController
 
         $data = DateTime::createFromFormat("Y-m-d", $nascimento);
 
-        if ($data) {
+        if (!$data) {
             Flight::response()->status(400);
             return;
         }
